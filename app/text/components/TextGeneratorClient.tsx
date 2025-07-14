@@ -22,6 +22,11 @@ export default function TextGeneratorClient() {
   const [textCopied, setTextCopied] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const textTypes = [
     { value: 'lorem' as TextType, label: 'Lorem Ipsum', description: 'Classic placeholder text' },
@@ -40,7 +45,21 @@ export default function TextGeneratorClient() {
     { value: 'nonsense' as TextType, label: 'Nonsense Text', description: 'Silly made-up words' }
   ];
 
+  const getApiUrl = (textParams: TextParams) => {
+    if (!isClient) return '';
+    
+    const url = new URL('/api/text', window.location.origin);
+    url.searchParams.set('type', textParams.type);
+    url.searchParams.set('length', textParams.length.toString());
+    if (textParams.text) {
+      url.searchParams.set('text', textParams.text);
+    }
+    return url.toString();
+  };
+
   const generateText = async (textParams: TextParams) => {
+    if (!isClient) return;
+    
     setLoading(true);
     try {
       const url = new URL('/api/text', window.location.origin);
@@ -62,8 +81,10 @@ export default function TextGeneratorClient() {
   };
 
   useEffect(() => {
-    generateText(params);
-  }, [params]);
+    if (isClient) {
+      generateText(params);
+    }
+  }, [params, isClient]);
 
   const copyText = async () => {
     try {
@@ -88,15 +109,11 @@ export default function TextGeneratorClient() {
   };
 
   const copyApiUrl = async () => {
-    const url = new URL('/api/text', window.location.origin);
-    url.searchParams.set('type', params.type);
-    url.searchParams.set('length', params.length.toString());
-    if (params.text) {
-      url.searchParams.set('text', params.text);
-    }
-
+    if (!isClient) return;
+    
+    const url = getApiUrl(params);
     try {
-      await navigator.clipboard.writeText(url.toString());
+      await navigator.clipboard.writeText(url);
       setUrlCopied(true);
       setTimeout(() => setUrlCopied(false), 2000);
     } catch (error) {
@@ -115,6 +132,38 @@ export default function TextGeneratorClient() {
   const handleTextChange = (text: string) => {
     setParams(prev => ({ ...prev, text }));
   };
+
+  // Don't render anything until we're on the client
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-background text-foreground font-[family-name:var(--font-inter)]">
+        {/* Header */}
+        <header className="px-4 py-6 sm:px-6 lg:px-8 border-b border-border">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <Link href="/" className="text-2xl font-bold text-accent hover:text-accent-hover transition-colors">
+              placeholder.guru
+            </Link>
+            <Link href="/" className="flex items-center gap-2 text-muted hover:text-foreground transition-colors">
+              <ArrowLeftIcon className="w-4 h-4" />
+              Back
+            </Link>
+          </div>
+        </header>
+
+        <main className="px-4 py-12 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold mb-4">Text Generator</h1>
+              <p className="text-muted text-lg">Generate placeholder text for your designs and mockups</p>
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-[family-name:var(--font-inter)]">
@@ -146,15 +195,7 @@ export default function TextGeneratorClient() {
                 <h3 className="font-medium mb-3 text-lg">API URL</h3>
                 <div className="flex gap-2">
                   <code className="flex-1 px-4 py-3 bg-background border border-border rounded-lg text-sm font-[family-name:var(--font-jetbrains-mono)] break-all text-accent">
-                    {(() => {
-                      const url = new URL('/api/text', window.location.origin);
-                      url.searchParams.set('type', params.type);
-                      url.searchParams.set('length', params.length.toString());
-                      if (params.text) {
-                        url.searchParams.set('text', params.text);
-                      }
-                      return url.toString();
-                    })()}
+                    {getApiUrl(params)}
                   </code>
                   <button
                     onClick={copyApiUrl}

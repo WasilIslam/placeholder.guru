@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { DocumentTextIcon, ArrowLeftIcon, ClipboardDocumentIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import { DocumentTextIcon, ClipboardDocumentIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import GeneratorLayout from '../../components/GeneratorLayout';
+import ControlPanel from '../../components/ControlPanel';
+import PreviewPanel from '../../components/PreviewPanel';
+import ApiDocumentation from '../../components/ApiDocumentation';
+import { Button, ButtonGroup, Select, Input, FormField, ApiUrlDisplay } from '../../components/FormField';
 
 const jsonExamples = {
   users: {
@@ -32,14 +36,7 @@ export default function JsonGeneratorClient() {
   const [count, setCount] = useState(5);
   const [generatedJson, setGeneratedJson] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [origin, setOrigin] = useState("");
   const [copiedStates, setCopiedStates] = useState<{[key: string]: boolean}>({});
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-    }
-  }, []);
 
   // Auto-generate JSON when type or count changes
   useEffect(() => {
@@ -53,7 +50,8 @@ export default function JsonGeneratorClient() {
       const data = await response.json();
       setGeneratedJson(JSON.stringify(data, null, 2));
     } catch (error) {
-      console.error("Error generating JSON:", error);
+      console.error('Error generating JSON:', error);
+      setGeneratedJson('Error generating JSON');
     } finally {
       setIsLoading(false);
     }
@@ -70,132 +68,162 @@ export default function JsonGeneratorClient() {
   };
 
   const copyApiUrl = () => {
-    const apiUrl = `/api/json?type=${selectedType}&count=${count}`;
-    copyToClipboard(origin + apiUrl, 'api');
+    const url = `/api/json?type=${selectedType}&count=${count}`;
+    const fullUrl = `${window.location.origin}${url}`;
+    copyToClipboard(fullUrl, 'api');
+  };
+
+  const downloadJson = () => {
+    if (typeof document !== 'undefined') {
+      const blob = new Blob([generatedJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedType}-data.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   const apiUrl = `/api/json?type=${selectedType}&count=${count}`;
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-[family-name:var(--font-inter)]">
-      {/* Header */}
-      <header className="px-4 py-6 sm:px-6 lg:px-8 border-b border-border">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-accent hover:text-accent-hover transition-colors">
-            placeholder.guru
-          </Link>
-          <Link href="/" className="flex items-center gap-2 text-muted hover:text-foreground transition-colors">
-            <ArrowLeftIcon className="w-4 h-4" />
-            Back
-          </Link>
-        </div>
-      </header>
+    <GeneratorLayout
+      title="JSON Data Generator"
+      description="Generate realistic sample data instantly. Perfect for testing APIs, databases, and applications with structured JSON content."
+      icon={<DocumentTextIcon className="w-6 h-6 text-accent" />}
+    >
+      <div className="space-y-8">
+        {/* API URL Display - At the top for quick access */}
+        <ApiUrlDisplay
+          url={apiUrl}
+          onCopy={copyApiUrl}
+          copied={copiedStates.api}
+        />
 
-      <main className="px-4 py-12 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">JSON Data Generator</h1>
-            <p className="text-muted text-lg">Generate realistic sample data instantly</p>
-          </div>
+        {/* Controls */}
+        <ControlPanel title="Data Options">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Data Type Selection */}
+            <FormField label="Data Type">
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(jsonExamples).map(([key, example]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedType(key as keyof typeof jsonExamples)}
+                    className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                      selectedType === key
+                        ? 'border-accent bg-accent/10 text-accent shadow-lg'
+                        : 'border-border/50 hover:border-accent/50 hover:bg-accent/5'
+                    }`}
+                  >
+                    <div className="font-semibold mb-1">{example.name}</div>
+                    <div className="text-sm text-muted">{example.description}</div>
+                  </button>
+                ))}
+              </div>
+            </FormField>
 
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Controls */}
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-3">Data Type</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {Object.entries(jsonExamples).map(([key, example]) => (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedType(key as keyof typeof jsonExamples)}
-                      className={`p-4 rounded-lg border text-left transition-colors ${
-                        selectedType === key
-                          ? "border-accent bg-accent/10 text-accent"
-                          : "border-border hover:border-accent"
-                      }`}
+            {/* Count Selection */}
+            <div className="space-y-4">
+              <Input
+                label="Number of Items"
+                type="number"
+                min="1"
+                max="100"
+                value={count}
+                onChange={(e) => setCount(parseInt(e.target.value) || 1)}
+                placeholder="5"
+              />
+              
+              {/* Fields Preview */}
+              <div className="p-4 bg-muted/10 rounded-xl border border-border/20">
+                <div className="text-sm font-medium mb-2">Fields included:</div>
+                <div className="flex flex-wrap gap-2">
+                  {jsonExamples[selectedType].fields.map((field) => (
+                    <span
+                      key={field}
+                      className="px-2 py-1 bg-accent/10 text-accent rounded text-xs font-mono"
                     >
-                      <div className="font-medium">{example.name}</div>
-                      <div className="text-sm text-muted">{example.description}</div>
-                    </button>
+                      {field}
+                    </span>
                   ))}
                 </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Count</label>
-                <input
-                  type="number"
-                  value={count}
-                  onChange={(e) => setCount(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 border border-border rounded-lg text-foreground focus:border-accent focus:outline-none"
-                  min="1"
-                  max="1000"
-                  placeholder="Enter any number (1-1,000)"
-                />
-              </div>
-
-              {/* API URL */}
-              <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
-                <h3 className="font-medium mb-2">API URL:</h3>
-                <code className="text-sm break-all text-accent font-[family-name:var(--font-jetbrains-mono)] block mb-2">
-                  {origin}{apiUrl}
-                </code>
-                <button
-                  onClick={copyApiUrl}
-                  className="flex items-center gap-1 text-sm text-accent hover:text-accent-hover transition-colors"
-                >
-                  <ClipboardDocumentIcon className="w-4 h-4" />
-                  {copiedStates.api ? 'Copied!' : 'Copy URL'}
-                </button>
-              </div>
-            </div>
-
-            {/* Generated JSON */}
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-medium mb-4">Generated JSON:</h3>
-                <div className="border border-border rounded-lg bg-background relative">
-                  {isLoading && (
-                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-                    </div>
-                  )}
-                  <pre className="p-4 text-sm font-[family-name:var(--font-jetbrains-mono)] overflow-x-auto max-h-96 overflow-y-auto">
-                    {generatedJson || "Loading..."}
-                  </pre>
-                </div>
-              </div>
-
-              {generatedJson && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => copyToClipboard(generatedJson, 'json')}
-                    className="w-full bg-accent hover:bg-accent-hover text-white font-medium px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <ClipboardDocumentIcon className="w-5 h-5" />
-                    {copiedStates.json ? 'Copied!' : 'Copy JSON'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const blob = new Blob([generatedJson], { type: "application/json" });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${selectedType}-data.json`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }}
-                    className="w-full border border-accent text-accent hover:bg-accent hover:text-white font-medium px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <ArrowDownTrayIcon className="w-5 h-5" />
-                    Download
-                  </button>
-                </div>
-              )}
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </ControlPanel>
+
+        {/* Preview */}
+        <PreviewPanel title="Generated JSON" isVisible={!!generatedJson}>
+          <div className="space-y-6">
+            {/* JSON Display */}
+            <div className="relative">
+              {isLoading && (
+                <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-xl z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+                </div>
+              )}
+              <pre className="bg-muted/20 border border-border/30 rounded-xl p-4 text-sm font-mono overflow-x-auto max-h-96 overflow-y-auto">
+                {generatedJson || "Loading..."}
+              </pre>
+            </div>
+
+            {/* Action Buttons */}
+            {generatedJson && (
+              <ButtonGroup>
+                <Button
+                  onClick={() => copyToClipboard(generatedJson, 'json')}
+                  className="flex-1"
+                >
+                  <ClipboardDocumentIcon className="w-5 h-5" />
+                  {copiedStates.json ? 'Copied!' : 'Copy JSON'}
+                </Button>
+                <Button
+                  onClick={downloadJson}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <ArrowDownTrayIcon className="w-5 h-5" />
+                  Download
+                </Button>
+              </ButtonGroup>
+            )}
+          </div>
+        </PreviewPanel>
+
+        {/* API Documentation */}
+        <ApiDocumentation
+          endpoint="/api/json"
+          parameters={[
+            {
+              name: 'type',
+              description: 'users | books | products | posts',
+              type: 'string',
+              required: true
+            },
+            {
+              name: 'count',
+              description: 'number of items to generate (1-100)',
+              type: 'number'
+            }
+          ]}
+          examples={[
+            {
+              url: '/api/json?type=users&count=5',
+              description: 'Generate 5 user profiles'
+            },
+            {
+              url: '/api/json?type=products&count=20',
+              description: 'Generate 20 product listings'
+            },
+            {
+              url: '/api/json?type=posts',
+              description: 'Generate default number of blog posts'
+            }
+          ]}
+        />
+      </div>
+    </GeneratorLayout>
   );
 } 

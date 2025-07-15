@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { PhotoIcon, ArrowLeftIcon, ClipboardDocumentIcon, ArrowDownTrayIcon, ArrowTopRightOnSquareIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import { PhotoIcon, ClipboardDocumentIcon, ArrowDownTrayIcon, ArrowTopRightOnSquareIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
+import GeneratorLayout from '../../components/GeneratorLayout';
+import ControlPanel from '../../components/ControlPanel';
+import PreviewPanel from '../../components/PreviewPanel';
+import ApiDocumentation from '../../components/ApiDocumentation';
+import { Button, ButtonGroup, Select, Input, FormField, ApiUrlDisplay } from '../../components/FormField';
 
 const FONTS = [
   { value: 'lato', label: 'Lato (Default)' },
@@ -29,14 +33,7 @@ export default function ImageGeneratorClient() {
   const [font, setFont] = useState("lato");
   const [retina, setRetina] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [origin, setOrigin] = useState("");
   const [copiedStates, setCopiedStates] = useState<{[key: string]: boolean}>({});
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-    }
-  }, []);
 
   const generateImageUrl = () => {
     const params = new URLSearchParams();
@@ -64,6 +61,12 @@ export default function ImageGeneratorClient() {
     }
   };
 
+  const copyApiUrl = () => {
+    const url = generateImageUrl();
+    const fullUrl = `${window.location.origin}${url}`;
+    copyToClipboard(fullUrl, 'api');
+  };
+
   const openFullSize = () => {
     if (typeof window !== 'undefined') {
       window.open(generateImageUrl(), "_blank");
@@ -82,129 +85,108 @@ export default function ImageGeneratorClient() {
   const apiUrl = generateImageUrl();
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-[family-name:var(--font-inter)]">
-      {/* Header */}
-      <header className="px-4 py-6 sm:px-6 lg:px-8 border-b border-border">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-accent hover:text-accent-hover transition-colors">
-            placeholder.guru
-          </Link>
-          <Link href="/" className="flex items-center gap-2 text-muted hover:text-foreground transition-colors">
-            <ArrowLeftIcon className="w-4 h-4" />
-            Back
-          </Link>
-        </div>
-      </header>
+    <GeneratorLayout
+      title="Image Generator"
+      description="Generate custom placeholder images with any dimensions, colors, and text. Perfect for mockups, prototypes, and development."
+      icon={<PhotoIcon className="w-6 h-6 text-accent" />}
+    >
+      <div className="space-y-8">
+        {/* API URL Display - At the top for quick access */}
+        <ApiUrlDisplay
+          url={apiUrl}
+          onCopy={copyApiUrl}
+          copied={copiedStates.api}
+        />
 
-      <main className="px-4 py-12 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Image Generator</h1>
-            <p className="text-muted text-lg">Generate placeholder images with custom dimensions and colors</p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Controls */}
+        {/* Controls */}
+        <ControlPanel title="Image Options">
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Basic Settings */}
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Width</label>
-                  <input
-                    type="number"
-                    value={width}
-                    onChange={(e) => setWidth(e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:border-accent focus:outline-none"
-                    min="1"
-                    max="2000"
-                    placeholder="1600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Height</label>
-                  <input
-                    type="number"
-                    value={height}
-                    onChange={(e) => setHeight(e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:border-accent focus:outline-none"
-                    min="1"
-                    max="2000"
-                    placeholder="400"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Text</label>
-                <input
-                  type="text"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:border-accent focus:outline-none"
-                  placeholder="Enter your text"
+                <Input
+                  label="Width"
+                  type="number"
+                  value={width}
+                  onChange={(e) => setWidth(e.target.value)}
+                  min="1"
+                  max="2000"
+                  placeholder="1600"
+                />
+                <Input
+                  label="Height"
+                  type="number"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  min="1"
+                  max="2000"
+                  placeholder="400"
                 />
               </div>
 
+              <Input
+                label="Text"
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Enter your text"
+              />
+
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Background</label>
+                <FormField label="Background Color">
                   <div className="flex gap-2">
                     <input
                       type="color"
                       value={bgColor ? `#${bgColor}` : "#E2E8F0"}
                       onChange={(e) => setBgColor(e.target.value.slice(1))}
-                      className="w-12 h-10 border border-border rounded"
+                      className="w-12 h-12 border-2 border-border/50 rounded-xl"
                     />
-                    <input
-                      type="text"
+                    <Input
                       value={bgColor}
                       onChange={(e) => setBgColor(e.target.value.replace("#", ""))}
-                      className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:border-accent focus:outline-none"
                       placeholder="E2E8F0"
+                      className="flex-1"
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Text Color</label>
+                </FormField>
+                <FormField label="Text Color">
                   <div className="flex gap-2">
                     <input
                       type="color"
                       value={textColor ? `#${textColor}` : "#4A5568"}
                       onChange={(e) => setTextColor(e.target.value.slice(1))}
-                      className="w-12 h-10 border border-border rounded"
+                      className="w-12 h-12 border-2 border-border/50 rounded-xl"
                     />
-                    <input
-                      type="text"
+                    <Input
                       value={textColor}
                       onChange={(e) => setTextColor(e.target.value.replace("#", ""))}
-                      className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:border-accent focus:outline-none"
                       placeholder="4A5568"
+                      className="flex-1"
                     />
                   </div>
-                </div>
+                </FormField>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Format</label>
-                <select
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:border-accent focus:outline-none"
-                >
-                  <option value="png">PNG</option>
-                  <option value="jpg">JPG</option>
-                  <option value="webp">WebP</option>
-                  <option value="gif">GIF</option>
-                  <option value="avif">AVIF</option>
-                </select>
-              </div>
+              <Select
+                label="Format"
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+                options={[
+                  { value: "png", label: "PNG" },
+                  { value: "jpg", label: "JPG" },
+                  { value: "webp", label: "WebP" },
+                  { value: "gif", label: "GIF" },
+                  { value: "avif", label: "AVIF" }
+                ]}
+              />
 
               {/* Advanced Settings */}
-              <div className="border border-border rounded-lg">
+              <div className="border border-border/50 rounded-xl">
                 <button
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/10 transition-colors"
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/10 transition-colors rounded-xl"
                 >
-                  <span className="font-medium">Advanced</span>
+                  <span className="font-medium">Advanced Settings</span>
                   {showAdvanced ? (
                     <ChevronUpIcon className="w-5 h-5 text-muted" />
                   ) : (
@@ -213,88 +195,125 @@ export default function ImageGeneratorClient() {
                 </button>
                 
                 {showAdvanced && (
-                  <div className="border-t border-border p-4 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Font</label>
-                      <select
-                        value={font}
-                        onChange={(e) => setFont(e.target.value)}
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:border-accent focus:outline-none"
-                      >
-                        {FONTS.map((fontOption) => (
-                          <option key={fontOption.value} value={fontOption.value}>
-                            {fontOption.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="border-t border-border/50 p-4 space-y-4">
+                    <Select
+                      label="Font"
+                      value={font}
+                      onChange={(e) => setFont(e.target.value)}
+                      options={FONTS}
+                    />
                     
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Quality</label>
-                      <select
-                        value={retina}
-                        onChange={(e) => setRetina(e.target.value)}
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:border-accent focus:outline-none"
-                      >
-                        <option value="">Standard</option>
-                        <option value="2x">Retina 2x</option>
-                        <option value="3x">Retina 3x</option>
-                      </select>
-                    </div>
+                    <Select
+                      label="Quality"
+                      value={retina}
+                      onChange={(e) => setRetina(e.target.value)}
+                      options={[
+                        { value: "", label: "Standard" },
+                        { value: "2x", label: "Retina 2x" },
+                        { value: "3x", label: "Retina 3x" }
+                      ]}
+                    />
                   </div>
                 )}
-              </div>
-
-              {/* API URL */}
-              <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
-                <h3 className="font-medium mb-2">API URL:</h3>
-                <code className="text-sm break-all text-accent font-[family-name:var(--font-jetbrains-mono)] block mb-2">
-                  {origin}{apiUrl}
-                </code>
-                <button
-                  onClick={() => copyToClipboard(origin + apiUrl, 'api')}
-                  className="flex items-center gap-1 text-sm text-accent hover:text-accent-hover transition-colors"
-                >
-                  <ClipboardDocumentIcon className="w-4 h-4" />
-                  {copiedStates.api ? 'Copied!' : 'Copy URL'}
-                </button>
               </div>
             </div>
 
             {/* Preview */}
             <div className="space-y-6">
               <div>
-                <h3 className="font-medium mb-4">Preview:</h3>
-                <div className="border border-border rounded-lg p-4 bg-muted/20">
+                <h3 className="text-lg font-semibold mb-4">Preview</h3>
+                <div className="border border-border/50 rounded-xl p-4 bg-muted/10">
                   <img
                     src={generateImageUrl()}
                     alt="Generated placeholder"
-                    className="max-w-full h-auto rounded"
+                    className="max-w-full h-auto rounded-lg"
                     style={{ maxHeight: "400px" }}
                   />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <button
+              <ButtonGroup>
+                <Button
                   onClick={openFullSize}
-                  className="w-full bg-accent hover:bg-accent-hover text-white font-medium px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  className="flex-1"
                 >
                   <ArrowTopRightOnSquareIcon className="w-5 h-5" />
                   Open Full Size
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={downloadImage}
-                  className="w-full border border-accent text-accent hover:bg-accent hover:text-white font-medium px-6 py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  variant="outline"
+                  className="flex-1"
                 >
                   <ArrowDownTrayIcon className="w-5 h-5" />
                   Download
-                </button>
-              </div>
+                </Button>
+              </ButtonGroup>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </ControlPanel>
+
+        {/* API Documentation */}
+        <ApiDocumentation
+          endpoint="/api/image"
+          parameters={[
+            {
+              name: 'width',
+              description: 'image width in pixels (1-2000)',
+              type: 'number'
+            },
+            {
+              name: 'height',
+              description: 'image height in pixels (1-2000)',
+              type: 'number'
+            },
+            {
+              name: 'text',
+              description: 'text to display on image',
+              type: 'string'
+            },
+            {
+              name: 'backgroundcolor',
+              description: 'background color (hex without #)',
+              type: 'string'
+            },
+            {
+              name: 'frontcolor',
+              description: 'text color (hex without #)',
+              type: 'string'
+            },
+            {
+              name: 'format',
+              description: 'png | jpg | webp | gif | avif',
+              type: 'string'
+            },
+            {
+              name: 'font',
+              description: 'font family name',
+              type: 'string'
+            },
+            {
+              name: 'retina',
+              description: '2x | 3x for high DPI displays',
+              type: 'string'
+            }
+          ]}
+          examples={[
+            {
+              url: '/api/image?width=800&height=600&text=Hello%20World',
+              description: 'Basic 800x600 image with text'
+            },
+            {
+              url: '/api/image?width=1200&height=630&backgroundcolor=3B82F6&frontcolor=FFFFFF&text=Social%20Media',
+              description: 'Social media image with custom colors'
+            },
+            {
+              url: '/api/image?width=400&height=400&format=webp&retina=2x',
+              description: 'Square WebP image at 2x resolution'
+            }
+          ]}
+        />
+      </div>
+    </GeneratorLayout>
   );
 } 

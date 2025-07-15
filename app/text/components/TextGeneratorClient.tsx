@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ClipboardIcon, ArrowDownTrayIcon, ChevronDownIcon, ChevronUpIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ClipboardIcon, ArrowDownTrayIcon, ChevronDownIcon, ChevronUpIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 
 type TextType = 'lorem' | 'random' | 'repeat' | 'sentences' | 'business' | 'tech' | 'pirate' | 'zombie' | 'space' | 'medieval' | 'nonsense';
 
@@ -136,21 +137,14 @@ export default function TextGeneratorClient() {
   // Don't render anything until we're on the client
   if (!isClient) {
     return (
-      <div className="min-h-screen bg-background text-foreground font-[family-name:var(--font-inter)]">
-        {/* Header */}
-        <header className="px-4 py-6 sm:px-6 lg:px-8 border-b border-border">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link href="/" className="text-2xl font-bold text-accent hover:text-accent-hover transition-colors">
-              placeholder.guru
-            </Link>
-            <Link href="/" className="flex items-center gap-2 text-muted hover:text-foreground transition-colors">
-              <ArrowLeftIcon className="w-4 h-4" />
-              Back
-            </Link>
-          </div>
-        </header>
+      <div className="min-h-screen bg-gradient-to-br   to-accent/5 text-foreground font-[family-name:var(--font-1)] flex flex-col">
+        <Header 
+          showBackButton={true} 
+          title="Text Generator" 
+          icon={<PencilSquareIcon className="w-6 h-6 text-accent" />} 
+        />
 
-        <main className="px-4 py-12 sm:px-6 lg:px-8">
+        <main className="flex-1 px-4 py-12 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold mb-4">Text Generator</h1>
@@ -161,26 +155,21 @@ export default function TextGeneratorClient() {
             </div>
           </div>
         </main>
+        
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-[family-name:var(--font-inter)]">
-      {/* Header */}
-      <header className="px-4 py-6 sm:px-6 lg:px-8 border-b border-border">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-accent hover:text-accent-hover transition-colors">
-            placeholder.guru
-          </Link>
-          <Link href="/" className="flex items-center gap-2 text-muted hover:text-foreground transition-colors">
-            <ArrowLeftIcon className="w-4 h-4" />
-            Back
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br   to-accent/5 text-foreground font-[family-name:var(--font-1)] flex flex-col">
+      <Header 
+        showBackButton={true} 
+        title="Text Generator" 
+        icon={<PencilSquareIcon className="w-6 h-6 text-accent" />} 
+      />
 
-      <main className="px-4 py-12 sm:px-6 lg:px-8">
+      <main className="flex-1 px-4 py-12 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4">Text Generator</h1>
@@ -333,6 +322,8 @@ export default function TextGeneratorClient() {
           </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 } 
